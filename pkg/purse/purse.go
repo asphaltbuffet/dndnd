@@ -2,47 +2,66 @@ package purse
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/asphaltbuffet/dndnd/pkg/calc"
 )
 
 type Purse struct {
-	value int
-
-	Copper   int
-	Silver   int
-	Electrum int
-	Gold     int
-	Platinum int
+	Name  string `toml:"name"`
+	Value int    `toml:"value"`
 }
 
-func NewPurse(value int) *Purse {
-	p := &Purse{value: value}
+func NewPurse(name string) *Purse {
+	// quick and dirty way to generate a unique ID
+	if name == "" {
+		name = fmt.Sprintf("%d", time.Now().Unix())
+	}
 
-	p.Platinum, value = value/calc.Platinum, value%calc.Platinum
-	p.Gold, value = value/calc.Gold, value%calc.Gold
-	p.Electrum, value = value/calc.Electrum, value%calc.Electrum
-	p.Silver, value = value/calc.Silver, value%calc.Silver
-	p.Copper = value
+	p := &Purse{Name: name}
 
 	return p
 }
 
 func (p *Purse) String() string {
-	return fmt.Sprintf(
-		"CP: %5d <<>> SP: %5d <<>> EP: %5d <<>> GP: %5d <<>> PP: %5d\n",
-		p.Copper, p.Silver, p.Electrum, p.Gold, p.Platinum,
-	)
+	return fmt.Sprintf("%s: %d", p.Name, p.Value)
 }
 
-func (p *Purse) Split(n int) ([]*Purse, int) {
-	remainder := p.value % n
-	quotient := p.value / n
-
-	purses := make([]*Purse, n)
-	for i := range purses {
-		purses[i] = NewPurse(quotient)
+func (p *Purse) Add(coins ...Coinage) {
+	for _, c := range coins {
+		c(p)
 	}
+}
 
-	return purses, remainder
+func (p *Purse) Breakdown() CurrencyBreakdown {
+	var b CurrencyBreakdown
+	cp := p.Value
+
+	b.Platinum, cp = cp/calc.PlatinumValue, cp%calc.PlatinumValue
+	b.Gold, cp = cp/calc.GoldValue, cp%calc.GoldValue
+	b.Electrum, cp = cp/calc.ElectrumValue, cp%calc.ElectrumValue
+	b.Silver, cp = cp/calc.SilverValue, cp%calc.SilverValue
+	b.Copper = cp
+
+	return b
+}
+
+func (p *Purse) Copper() int {
+	return p.Breakdown().Copper
+}
+
+func (p *Purse) Silver() int {
+	return p.Breakdown().Silver
+}
+
+func (p *Purse) Electrum() int {
+	return p.Breakdown().Electrum
+}
+
+func (p *Purse) Gold() int {
+	return p.Breakdown().Gold
+}
+
+func (p *Purse) Platinum() int {
+	return p.Breakdown().Platinum
 }

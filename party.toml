@@ -1,0 +1,14 @@
+name = "Idiots Inc."
+unclaimed = 0
+
+[purse.Ben]
+value = 100
+
+[purse.Eldon]
+value = 200
+
+[purse.Mike]
+value = 300
+
+[purse.Toren]
+value = 400
